@@ -1,0 +1,13 @@
+# This contains any variables to be passed to the playbook
+---
+containerd_cri_socket: "/run/containerd/containerd.sock"
+pause_image: "k8s.gcr.io/pause:3.4.1"
+nvidia-container-runtime: "/usr/bin/nvidia-container-runtime"
+sysusr_prefix: "/usr"
+default_image_registry_mirrors:
+  "*" : ""
+image_registries_with_auth:
+- host: 
+  username: 
+  password: 
+  identityToken: 

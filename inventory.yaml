@@ -1,0 +1,28 @@
+all:
+  vars:
+    containerd_cri_socket: "/run/containerd/containerd.sock"
+    pause_image: "k8s.gcr.io/pause:3.4.1"
+    nvidia-container-runtime: "/usr/bin/nvidia-container-runtime"
+    sysusr_prefix: "/usr"
+    default_image_registry_mirrors:
+      "*" : ""
+    image_registries_with_auth:
+    - host: 
+      username: 
+      password: 
+      identityToken: 
+    ansible_user: centos
+    ansible_port: 22
+    ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+    ansible_ssh_private_key_file: abhojdkp-dkp
+  hosts:
+    10.0.228.15:
+      node_pool: control
+    10.0.193.155:
+      node_pool: worker
+    10.0.89.59:
+      node_pool: worker
+    10.0.97.79:
+      node_pool: worker
+    10.0.33.74:
+      node_pool: worker

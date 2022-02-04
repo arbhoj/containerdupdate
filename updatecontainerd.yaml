@@ -1,0 +1,17 @@
+---
+- hosts: all
+  gather_facts: no
+  become: yes
+  vars_files: 
+  - vars.yaml
+  tasks:
+  - name: Replace variables and Copy generated config.toml
+    template:
+      src: templates/config.toml.tmpl
+      dest: /etc/containerd/config.toml
+      owner: root
+      group: root
+  - name: Restart containerd
+    service:
+      name: containerd
+      state: restarted
