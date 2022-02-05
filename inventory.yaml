@@ -1,20 +1,12 @@
 all:
   vars:
-    containerd_cri_socket: "/run/containerd/containerd.sock"
-    pause_image: "k8s.gcr.io/pause:3.4.1"
-    nvidia-container-runtime: "/usr/bin/nvidia-container-runtime"
-    sysusr_prefix: "/usr"
-    default_image_registry_mirrors:
-      "*" : ""
-    image_registries_with_auth:
-    - host: 
-      username: 
-      password: 
-      identityToken: 
+    ansible_python_interpreter: /usr/bin/python
     ansible_user: centos
     ansible_port: 22
     ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
     ansible_ssh_private_key_file: abhojdkp-dkp
+    registry_server: "10.0.52.123:5000" #Note: Use the private ip of the registry server
+    cluster_name: abhojdkp-dkp
   hosts:
     10.0.228.15:
       node_pool: control

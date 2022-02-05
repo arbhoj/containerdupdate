@@ -1,6 +1,13 @@
 version = 2
 root = "/var/lib/containerd"
+{% if ansible_os_family == "Flatcar" %}
+# runtime state information
+state = "/run/docker/libcontainerd/containerd"
+# set containerd as a subreaper on linux when it is not running as PID 1
+subreaper = true
+{% else %}
 state = "/run/containerd"
+{% endif %}
 plugin_dir = ""
 disabled_plugins = []
 required_plugins = []
@@ -9,7 +16,7 @@ oom_score = 0
 imports = ["/etc/containerd/conf.d/*.toml"]
 
 [grpc]
-  address = "/run/containerd/containerd.sock"
+  address = "{{ containerd_cri_socket }}"
   tcp_address = ""
   tcp_tls_cert = ""
   tcp_tls_key = ""
@@ -55,7 +62,7 @@ imports = ["/etc/containerd/conf.d/*.toml"]
     stream_server_port = "0"
     stream_idle_timeout = "4h0m0s"
     enable_selinux = false
-    sandbox_image = "k8s.gcr.io/pause:3.4.1"
+    sandbox_image = "{{ pause_image }}"
     stats_collect_period = 10
     systemd_cgroup = false
     enable_tls_streaming = false
@@ -67,7 +74,11 @@ imports = ["/etc/containerd/conf.d/*.toml"]
     disable_proc_mount = false
     [plugins."io.containerd.grpc.v1.cri".containerd]
       snapshotter = "overlayfs"
+{% if gpu is defined and 'nvidia' in gpu.types %}
+      default_runtime_name = "nvidia-container-runtime"
+{% else %}
       default_runtime_name = "runc"
+{% endif %}
       no_pivot = false
       [plugins."io.containerd.grpc.v1.cri".containerd.default_runtime]
         runtime_type = ""
@@ -88,7 +99,7 @@ imports = ["/etc/containerd/conf.d/*.toml"]
         [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia-container-runtime]
           runtime_type = "io.containerd.runc.v1"
           [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.nvidia-container-runtime.options]
-            BinaryName = "/usr/bin/nvidia-container-runtime"
+            BinaryName = "{{ sysusr_prefix }}/bin/nvidia-container-runtime"
     [plugins."io.containerd.grpc.v1.cri".cni]
       bin_dir = "/opt/cni/bin"
       conf_dir = "/etc/cni/net.d"
@@ -96,8 +107,33 @@ imports = ["/etc/containerd/conf.d/*.toml"]
       conf_template = ""
     [plugins."io.containerd.grpc.v1.cri".registry]
       [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
+{% if default_image_registry_mirrors is defined and default_image_registry_mirrors is not none and (default_image_registry_mirrors | list | length >0) %}
+{% for registry, mirror in default_image_registry_mirrors.items() %}
+        [plugins."io.containerd.grpc.v1.cri".registry.mirrors."{{ registry }}"]
+          endpoint = ["{{ mirror }}"{{ ',"https://registry-1.docker.io"' if registry == 'docker.io' else ''}}]
+{% endfor %}
+{% else %}
         [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
           endpoint = ["https://registry-1.docker.io"]
+{% endif %}
+{% if image_registries_with_auth is defined and image_registries_with_auth is not none and image_registries_with_auth | list | length >0 %}
+      [plugins."io.containerd.grpc.v1.cri".registry.configs]
+{% for registry in image_registries_with_auth %}
+        [plugins."io.containerd.grpc.v1.cri".registry.configs."{{ registry.host }}".auth]
+        {% if registry.username is defined %}
+            username = "{{ registry.username }}"
+        {% endif %}
+        {% if registry.password is defined %}
+            password = "{{ registry.password }}"
+        {% endif %}
+        {% if registry.auth is defined %}
+            auth = "{{ registry.auth }}"
+        {% endif %}
+        {% if registry.identityToken is defined %}
+            identitytoken = "{{ registry.identityToken }}"
+        {% endif %}
+{% endfor %}
+{% endif %}
     [plugins."io.containerd.grpc.v1.cri".x509_key_pair_streaming]
       tls_cert_file = ""
       tls_key_file = ""
@@ -111,7 +147,11 @@ imports = ["/etc/containerd/conf.d/*.toml"]
     no_prometheus = false
   [plugins."io.containerd.runtime.v1.linux"]
     shim = "containerd-shim"
+{% if gpu is defined and 'nvidia' in gpu.types  %}
+    runtime = "nvidia-container-runtime"
+{% else %}
     runtime = "runc"
+{% endif %}
     runtime_root = ""
     no_shim = false
     shim_debug = false

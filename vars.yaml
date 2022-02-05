@@ -5,9 +5,9 @@ pause_image: "k8s.gcr.io/pause:3.4.1"
 nvidia-container-runtime: "/usr/bin/nvidia-container-runtime"
 sysusr_prefix: "/usr"
 default_image_registry_mirrors:
-  "*" : ""
+  "*" : "http://10.0.52.123:5000"
 image_registries_with_auth:
-- host: 
+- host: 10.0.52.123:5000
   username: 
   password: 
   identityToken: 
